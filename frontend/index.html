@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registrum — Learning Management System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+</head>
+<body data-theme="dark">
+
+  <div class="grain"></div>
+
+  <!-- ===================== AUTH GATE ===================== -->
+  <div class="auth-gate" id="auth-gate">
+    <button id="auth-theme-toggle" class="theme-toggle auth-theme-toggle" title="Toggle light / dark">
+      <span class="toggle-track"><span class="toggle-thumb"></span></span>
+    </button>
+
+    <div class="auth-card">
+      <svg class="brand-mark" viewBox="0 0 60 60" aria-hidden="true">
+        <circle cx="30" cy="30" r="27" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <circle cx="30" cy="30" r="21.5" fill="none" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+        <text x="30" y="40" text-anchor="middle" font-family="'Source Serif 4', serif" font-size="26" font-weight="600" fill="currentColor">R</text>
+      </svg>
+      <h1 class="auth-title">Welcome to Registrum</h1>
+      <p class="auth-sub">Enter your credentials to access the ledger</p>
+
+      <div class="auth-switch">
+        <button class="auth-switch-btn active" data-auth-tab="login">Login</button>
+        <button class="auth-switch-btn" data-auth-tab="register">Register</button>
+      </div>
+
+      <form id="form-login" class="auth-form">
+        <div class="field"><label>Email</label><input required type="email" name="email" placeholder="you@example.com"></div>
+        <div class="field"><label>Password</label><input required type="password" name="password" placeholder="********"></div>
+        <button type="submit" class="btn-stamp auth-submit">Enter Register</button>
+      </form>
+
+      <form id="form-register" class="auth-form" hidden>
+        <div class="field"><label>Full name</label><input required name="name" placeholder="Your name"></div>
+        <div class="field"><label>Email</label><input required type="email" name="email" placeholder="you@example.com"></div>
+        <div class="field"><label>Password</label><input required type="password" name="password" placeholder="At least 6 characters" minlength="6"></div>
+        <div class="field">
+          <label>Role</label>
+          <select name="role">
+            <option value="student">Student</option>
+            <option value="teacher">Teacher</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-stamp auth-submit">Create Account</button>
+      </form>
+
+      <p class="auth-error" id="auth-error" hidden></p>
+    </div>
+  </div>
+
+  <!-- ===================== APP SHELL (hidden until logged in) ===================== -->
+  <div class="app-shell" id="app-shell" hidden>
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="ledger-spine">
+    <div class="spine-top">
+      <button id="sidebar-collapse" class="collapse-btn" title="Collapse sidebar">‹</button>
+      <svg class="brand-mark" viewBox="0 0 60 60" aria-hidden="true">
+        <circle cx="30" cy="30" r="27" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <circle cx="30" cy="30" r="21.5" fill="none" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+        <text x="30" y="40" text-anchor="middle" font-family="'Source Serif 4', serif" font-size="26" font-weight="600" fill="currentColor">R</text>
+      </svg>
+      <h1 class="spine-title">Registrum</h1>
+      <p class="spine-sub">Learning &amp; Course Ledger</p>
+    </div>
+
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-tab="dashboard">
+        <span class="tab-index">00</span>
+        <span class="tab-label">Dashboard</span>
+      </button>
+      <button class="tab" data-tab="students">
+        <span class="tab-index">01</span>
+        <span class="tab-label">Students</span>
+      </button>
+      <button class="tab" data-tab="courses">
+        <span class="tab-index">02</span>
+        <span class="tab-label">Courses</span>
+      </button>
+      <button class="tab" data-tab="enrollments">
+        <span class="tab-index">03</span>
+        <span class="tab-label">Enrollments</span>
+      </button>
+      <button class="tab" data-tab="attendance">
+        <span class="tab-index">04</span>
+        <span class="tab-label">Attendance</span>
+      </button>
+      <button class="tab" data-tab="grades">
+        <span class="tab-index">05</span>
+        <span class="tab-label">Grades</span>
+      </button>
+      <button class="tab" data-tab="lessons">
+        <span class="tab-index">06</span>
+        <span class="tab-label">Lessons</span>
+      </button>
+      <button class="tab" data-tab="assignments">
+        <span class="tab-index">07</span>
+        <span class="tab-label">Assignments</span>
+      </button>
+      <button class="tab" data-tab="quizzes">
+        <span class="tab-index">08</span>
+        <span class="tab-label">Quizzes</span>
+      </button>
+      <button class="tab" data-tab="announcements">
+        <span class="tab-index">09</span>
+        <span class="tab-label">Announcements</span>
+      </button>
+      <button class="tab" data-tab="users" data-admin-only>
+        <span class="tab-index">10</span>
+        <span class="tab-label">Manage Users</span>
+      </button>
+    </nav>
+
+    <div class="spine-bottom">
+      <div class="user-card" id="user-card">
+        <span class="user-name" id="user-name">—</span>
+        <span class="user-role" id="user-role">—</span>
+      </div>
+      <button id="logout-btn" class="btn-ghost logout-btn">Sign out</button>
+      <button id="theme-toggle" class="theme-toggle" title="Toggle light / dark">
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        <span class="theme-label">Dark register</span>
+      </button>
+      <p class="api-status" id="api-status"><span class="dot"></span> Connecting…</p>
+    </div>
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <main class="ledger-page">
+
+    <!-- DASHBOARD -->
+    <section class="panel active" id="panel-dashboard" data-reveal>
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Ledger 00</p>
+          <h2 id="dashboard-title">Dashboard</h2>
+        </div>
+      </header>
+
+      <div class="stat-grid" id="stat-grid"></div>
+
+      <div class="chart-grid">
+        <div class="chart-card">
+          <h3 class="chart-title" id="chart1-title">Enrollments by Course</h3>
+          <div class="chart-canvas-wrap"><canvas id="chart1"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3 class="chart-title" id="chart2-title">Grade Distribution</h3>
+          <div class="chart-canvas-wrap"><canvas id="chart2"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3 class="chart-title" id="chart3-title">Attendance Summary</h3>
+          <div class="chart-canvas-wrap"><canvas id="chart3"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STUDENTS -->
+    <section class="panel" id="panel-students" data-reveal>
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Ledger 01</p>
+          <h2>Students on Roll</h2>
+        </div>
+        <button class="btn-stamp" data-open="form-student" data-role-restricted="admin,teacher">+ New Entry</button>
+      </header>
+
+      <form class="record-form" id="form-student" hidden>
+        <input type="hidden" name="id">
+        <div class="field"><label>Full name</label><input required name="name" placeholder="e.g. Ayesha Khan"></div>
+        <div class="field"><label>Email</label><input required type="email" name="email" placeholder="ayesha@example.com"></div>
+        <div class="field"><label>Phone</label><input name="phone" placeholder="03xx-xxxxxxx"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn-stamp">Save Record</button>
+          <button type="button" class="btn-ghost" data-close>Cancel</button>
+        </div>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Roll</th><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th><th></th></tr></thead>
+          <tbody id="students-body"></tbody>
+        </table>
+        <p class="empty-state" id="students-empty" hidden>No students on the register yet — add the first entry above.</p>
+      </div>
+    </section>
+
+    <!-- COURSES -->
+    <section class="panel" id="panel-courses" data-reveal>
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Ledger 02</p>
+          <h2>Course Catalogue</h2>
+        </div>
+        <button class="btn-stamp" data-open="form-course" data-role-restricted="admin,teacher">+ New Entry</button>
+      </header>
+
+      <form class="record-form" id="form-course" hidden>
+        <input type="hidden" name="id">
+        <div class="field"><label>Course name</label><input required name="name" placeholder="e.g. Data Structures"></div>
+        <div class="field"><label>Code</label><input required name="code" placeholder="e.g. CS-201"></div>
+        <div class="field"><label>Credit hours</label><input required type="number" min="1" max="6" name="credit_hours" value="3"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn-stamp">Save Record</button>
+          <button type="button" class="btn-ghost" data-close>Cancel</button>
+        </div>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Code</th><th>Course</th><th>Credit Hrs</th><th></th></tr></thead>
+          <tbody id="courses-body"></tbody>
+        </table>
+        <p class="empty-state" id="courses-empty" hidden>No courses catalogued yet.</p>
+      </div>
+    </section>
+
+    <!-- ENROLLMENTS -->
+    <section class="panel" id="panel-enrollments" data-reveal>
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Ledger 03</p>
+          <h2>Enrollments</h2>
+        </div>
+        <button class="btn-stamp" data-open="form-enrollment" data-role-restricted="admin,teacher">+ Enroll Student</button>
+      </header>
+
+      <form class="record-form" id="form-enrollment" hidden>
+        <div class="field">
+          <label>Student</label>
+          <select required name="student_id" id="enroll-student-select"></select>
+        </div>
+        <div class="field">
+          <label>Course</label>
+          <select required name="course_id" id="enroll-course-select"></select>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-stamp">Enroll</button>
+          <button type="button" class="btn-ghost" data-close>Cancel</button>
+        </div>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Student</th><th>Course</th><th>Code</th><th>Enrolled On</th><th></th></tr></thead>
+          <tbody id="enrollments-body"></tbody>
+        </table>
+        <p class="empty-state" id="enrollments-empty" hidden>No enrollments recorded yet.</p>
+      </div>
+    </section>
+
+    <!-- ATTENDANCE -->
+    <section class="panel" id="panel-attendance" data-reveal>
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Ledger 04</p>
+          <h2>Attendance</h2>
+        </div>
+        <button class="btn-stamp" data-open="form-attendance" data-role-restricted="admin,teacher">+ Mark Attendance</button>
+      </header>
+
+      <form class="record-form" id="form-attendance" hidden>
+        <div class="field">
+          <label>Student</label>
+          <select required name="student_id" id="att-student-select"></select>
+        </div>
+        <div class="field">
+          <label>Course</label>
+          <select required name="course_id" id="att-course-select"></select>
+        </div>
+        <div class="field"><label>Date</label><input required type="date" name="date"></div>
+        <div class="field">
+          <label>Status</label>
+          <select required name="status">
+            <option value="present">Present</option>
+            <option value="absent">Absent</option>
+            <option value="leave">Leave</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-stamp">Save Record</button>
+          <button type="button" class="btn-ghost" data-close>Cancel</button>
+        </div>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Student</th><th>Course</th><th>Date</th><th>Status</th><th></th></tr></thead>
+          <tbody id="attendance-body"></tbody>
+        </table>
+        <p class="empty-state" id="attendance-empty" hidden>No attendance marked yet.</p>
+      </div>
+    </section>
+
+    <!-- GRADES -->
+    <section class="panel" id="panel-grades" data-reveal>
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Ledger 05</p>
+          <h2>Grade Sheet</h2>
+        </div>
+        <button class="btn-stamp" data-open="form-grade" data-role-restricted="admin,teacher">+ Add Grade</button>
+      </header>
+
+      <form class="record-form" id="form-grade" hidden>
+        <div class="field">
+          <label>Student</label>
+          <select required name="student_id" id="grade-student-select"></select>
+        </div>
+        <div class="field">
+          <label>Course</label>
+          <select required name="course_id" id="grade-course-select"></select>
+        </div>
+        <div class="field"><label>Marks (0-100)</label><input required type="number" min="0" max="100" step="0.01" name="marks"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn-stamp">Save Grade</button>
+          <button type="button" class="btn-ghost" data-close>Cancel</button>
+        </div>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Student</th><th>Course</th><th>Marks</th><th>Grade</th><th></th></tr></thead>
+          <tbody id="grades-body"></tbody>
+        </table>
+        <p class="empty-state" id="grades-empty" hidden>No grades recorded yet.</p>
+      </div>
+    </section>
+
+    <!-- LESSONS -->
+    <section class="panel" id="panel-lessons" data-reveal>
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Ledger 06</p>
+          <h2>Course Lessons</h2>
+        </div>
+        <button class="btn-stamp" data-open="form-lesson" data-role-restricted="admin,teacher">+ Add Lesson</button>
+      </header>
+
+      <div class="course-picker">
+        <label>Course</label>
+        <select id="lessons-course-select"></select>
+      </div>
+
+      <div class="progress-card" id="lessons-progress" hidden>
+        <div class="progress-info">
+          <span id="lessons-progress-label">0 / 0 lessons complete</span>
+          <span id="lessons-progress-pct">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="lessons-progress-fill"></div></div>
+      </div>
+
+      <form class="record-form" id="form-lesson" hidden>
+        <div class="field"><label>Title</label><input required name="title" placeholder="e.g. Introduction to Loops"></div>
+        <div class="field">
+          <label>Type</label>
+          <select name="content_type">
+            <option value="text">Text</option>
+            <option value="video">Video link</option>
+            <option value="link">Link</option>
+            <option value="pdf">PDF link</option>
+          </select>
+        </div>
+        <div class="field" style="flex-basis:100%"><label>Content</label><textarea required name="content" rows="3" placeholder="Write the lesson text, or paste a video/PDF/link URL"></textarea></div>
+        <div class="field"><label>Order</label><input type="number" name="order_index" value="0" min="0"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn-stamp">Save Lesson</button>
+          <button type="button" class="btn-ghost" data-close>Cancel</button>
+        </div>
+      </form>
+
+      <div class="lesson-list" id="lessons-list"></div>
+      <p class="empty-state" id="lessons-empty" hidden>Pick a course above — no lessons added yet.</p>
+    </section>
+
+    <!-- ASSIGNMENTS -->
+    <section class="panel" id="panel-assignments" data-reveal>
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Ledger 07</p>
+          <h2>Assignments</h2>
+        </div>
+        <button class="btn-stamp" data-open="form-assignment" data-role-restricted="admin,teacher">+ New Assignment</button>
+      </header>
+
+      <div class="course-picker">
+        <label>Course</label>
+        <select id="assignments-course-select"></select>
+      </div>
+
+      <form class="record-form" id="form-assignment" hidden>
+        <div class="field" style="flex-basis:100%"><label>Title</label><input required name="title" placeholder="e.g. Assignment 1 - Arrays"></div>
+        <div class="field" style="flex-basis:100%"><label>Description</label><textarea name="description" rows="2" placeholder="Instructions for students"></textarea></div>
+        <div class="field"><label>Due date</label><input required type="datetime-local" name="due_date"></div>
+        <div class="field"><label>Max marks</label><input required type="number" name="max_marks" value="100" min="1"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn-stamp">Post Assignment</button>
+          <button type="button" class="btn-ghost" data-close>Cancel</button>
+        </div>
+      </form>
+
+      <div class="assignment-list" id="assignments-list"></div>
+      <p class="empty-state" id="assignments-empty" hidden>Pick a course above — no assignments posted yet.</p>
+    </section>
+
+    <!-- QUIZZES -->
+    <section class="panel" id="panel-quizzes" data-reveal>
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Ledger 08</p>
+          <h2>Quizzes</h2>
+        </div>
+        <button class="btn-stamp" data-open="form-quiz" data-role-restricted="admin,teacher">+ New Quiz</button>
+      </header>
+
+      <div class="course-picker">
+        <label>Course</label>
+        <select id="quizzes-course-select"></select>
+      </div>
+
+      <form class="record-form" id="form-quiz" hidden>
+        <div class="field" style="flex-basis:100%"><label>Title</label><input required name="title" placeholder="e.g. Quiz 1 - Basics"></div>
+        <div class="field" style="flex-basis:100%"><label>Description</label><textarea name="description" rows="2" placeholder="Optional description"></textarea></div>
+        <div class="field"><label>Time limit (minutes)</label><input required type="number" name="time_limit_minutes" value="30" min="1"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn-stamp">Create Quiz</button>
+          <button type="button" class="btn-ghost" data-close>Cancel</button>
+        </div>
+      </form>
+
+      <div class="quiz-list" id="quizzes-list"></div>
+      <p class="empty-state" id="quizzes-empty" hidden>Pick a course above — no quizzes created yet.</p>
+    </section>
+
+    <!-- ANNOUNCEMENTS -->
+    <section class="panel" id="panel-announcements" data-reveal>
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Ledger 09</p>
+          <h2>Announcements</h2>
+        </div>
+        <button class="btn-stamp" data-open="form-announcement" data-role-restricted="admin,teacher">+ New Announcement</button>
+      </header>
+
+      <form class="record-form" id="form-announcement" hidden>
+        <div class="field">
+          <label>Course (optional)</label>
+          <select name="course_id" id="announcement-course-select">
+            <option value="">— Site-wide —</option>
+          </select>
+        </div>
+        <div class="field" style="flex-basis:100%"><label>Title</label><input required name="title" placeholder="Announcement title"></div>
+        <div class="field" style="flex-basis:100%"><label>Message</label><textarea required name="message" rows="3" placeholder="Write your announcement"></textarea></div>
+        <div class="form-actions">
+          <button type="submit" class="btn-stamp">Post Announcement</button>
+          <button type="button" class="btn-ghost" data-close>Cancel</button>
+        </div>
+      </form>
+
+      <div class="announcement-list" id="announcements-list"></div>
+      <p class="empty-state" id="announcements-empty" hidden>No announcements yet.</p>
+    </section>
+
+    <!-- MANAGE USERS (Admin only) -->
+    <section class="panel" id="panel-users" data-reveal>
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Ledger 10</p>
+          <h2>Manage Users</h2>
+        </div>
+        <button class="btn-stamp" data-open="form-user">+ New User</button>
+      </header>
+
+      <form class="record-form" id="form-user" hidden>
+        <div class="field"><label>Full name</label><input required name="name" placeholder="Full name"></div>
+        <div class="field"><label>Email</label><input required type="email" name="email" placeholder="email@example.com"></div>
+        <div class="field"><label>Password</label><input required type="password" name="password" placeholder="At least 6 characters" minlength="6"></div>
+        <div class="field">
+          <label>Role</label>
+          <select name="role">
+            <option value="student">Student</option>
+            <option value="teacher">Teacher</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-stamp">Create User</button>
+          <button type="button" class="btn-ghost" data-close>Cancel</button>
+        </div>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th></th></tr></thead>
+          <tbody id="users-body"></tbody>
+        </table>
+        <p class="empty-state" id="users-empty" hidden>No users found.</p>
+      </div>
+    </section>
+
+  </main>
+
+  </div><!-- /app-shell -->
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
