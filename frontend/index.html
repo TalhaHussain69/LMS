@@ -8,8 +8,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </head>
 <body data-theme="dark">
+
+  <!-- ===================== PAGE LOADER ===================== -->
+  <div class="page-loader" id="page-loader">
+    <div class="spinner"></div>
+  </div>
 
   <div class="grain"></div>
 
@@ -55,6 +62,18 @@
       </form>
 
       <p class="auth-error" id="auth-error" hidden></p>
+    </div>
+  </div>
+
+  <!-- ===================== NOTIFICATION BELL ===================== -->
+  <div class="notif-wrap" id="notif-wrap">
+    <button class="notif-bell" id="notif-bell" title="Announcements">
+      🔔
+      <span class="notif-badge" id="notif-badge" hidden>0</span>
+    </button>
+    <div class="notif-dropdown" id="notif-dropdown" hidden>
+      <div class="notif-dropdown-head">Announcements</div>
+      <div class="notif-list" id="notif-list"></div>
     </div>
   </div>
 
@@ -186,6 +205,9 @@
         </div>
       </form>
 
+      <div class="search-bar">
+        <input type="text" id="students-search" placeholder="Search students by name, email, phone…">
+      </div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Roll</th><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th><th></th></tr></thead>
@@ -216,6 +238,9 @@
         </div>
       </form>
 
+      <div class="search-bar">
+        <input type="text" id="courses-search" placeholder="Search courses by name or code…">
+      </div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Code</th><th>Course</th><th>Credit Hrs</th><th></th></tr></thead>
@@ -250,6 +275,9 @@
         </div>
       </form>
 
+      <div class="search-bar">
+        <input type="text" id="enrollments-search" placeholder="Search by student or course…">
+      </div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Student</th><th>Course</th><th>Code</th><th>Enrolled On</th><th></th></tr></thead>
@@ -293,6 +321,9 @@
         </div>
       </form>
 
+      <div class="search-bar">
+        <input type="text" id="attendance-search" placeholder="Search by student or course…">
+      </div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Student</th><th>Course</th><th>Date</th><th>Status</th><th></th></tr></thead>
@@ -328,6 +359,9 @@
         </div>
       </form>
 
+      <div class="search-bar">
+        <input type="text" id="grades-search" placeholder="Search by student or course…">
+      </div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Student</th><th>Course</th><th>Marks</th><th>Grade</th><th></th></tr></thead>
@@ -499,6 +533,9 @@
         </div>
       </form>
 
+      <div class="search-bar">
+        <input type="text" id="users-search" placeholder="Search users by name, email, role…">
+      </div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th></th></tr></thead>
@@ -513,6 +550,7 @@
   </div><!-- /app-shell -->
 
   <div class="toast" id="toast"></div>
+  <button class="back-to-top" id="back-to-top" title="Back to top">↑</button>
 
   <script src="js/api.js"></script>
   <script src="js/app.js"></script>

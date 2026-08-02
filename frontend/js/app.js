@@ -80,6 +80,7 @@ function enterApp(user) {
   authGate.hidden = true;
   appShell.hidden = false;
   applyRoleVisibility();
+  showAllSkeletons();
   checkHealth();
   refreshAll();
 }
@@ -118,23 +119,28 @@ document.getElementById('form-register').addEventListener('submit', async (e) =>
 
 async function tryAutoLogin() {
   const token = localStorage.getItem('sms-token');
-  if (!token) return;
+  if (!token) {
+    hidePageLoader();
+    return;
+  }
   try {
     const user = await api.auth.me();
     enterApp(user);
   } catch {
     localStorage.removeItem('sms-token');
+  } finally {
+    hidePageLoader();
   }
+}
+
+function hidePageLoader() {
+  const loader = document.getElementById('page-loader');
+  if (loader) loader.classList.add('hide');
 }
 
 // ---------------- Tabs ----------------
 document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
-  });
+  tab.addEventListener('click', () => switchToPanel(tab.dataset.tab));
 });
 
 // ---------------- Toast ----------------
@@ -210,7 +216,7 @@ async function loadStudents() {
 
   body.querySelectorAll('[data-del-student]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('Remove this student from the register?')) return;
+      if (!(await confirmDialog('Remove this student from the register?'))) return;
       try {
         await api.students.remove(btn.dataset.delStudent);
         toast('Student removed');
@@ -255,7 +261,7 @@ async function loadCourses() {
 
   body.querySelectorAll('[data-del-course]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('Remove this course from the catalogue?')) return;
+      if (!(await confirmDialog('Remove this course from the catalogue?'))) return;
       try {
         await api.courses.remove(btn.dataset.delCourse);
         toast('Course removed');
@@ -319,7 +325,7 @@ async function loadEnrollments() {
 
   body.querySelectorAll('[data-del-enroll]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('Unenroll this student from the course?')) return;
+      if (!(await confirmDialog('Unenroll this student from the course?'))) return;
       try {
         await api.enrollments.remove(btn.dataset.delEnroll);
         toast('Student unenrolled');
@@ -361,7 +367,7 @@ async function loadAttendance() {
 
   body.querySelectorAll('[data-del-att]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('Remove this attendance record?')) return;
+      if (!(await confirmDialog('Remove this attendance record?'))) return;
       try {
         await api.attendance.remove(btn.dataset.delAtt);
         toast('Attendance record removed');
@@ -412,7 +418,7 @@ async function loadGrades() {
 
   body.querySelectorAll('[data-del-grade]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('Remove this grade record?')) return;
+      if (!(await confirmDialog('Remove this grade record?'))) return;
       try {
         await api.grades.remove(btn.dataset.delGrade);
         toast('Grade removed');
@@ -455,9 +461,13 @@ function renderStatCards(cards) {
   const grid = document.getElementById('stat-grid');
   grid.innerHTML = cards.map((c, i) => `
     <div class="stat-card" style="animation-delay:${i * 60}ms">
-      <div class="stat-value">${c.value}</div>
+      <div class="stat-value counting" data-target="${c.value}">0</div>
       <div class="stat-label">${c.label}</div>
     </div>`).join('');
+
+  grid.querySelectorAll('.stat-value').forEach(el => {
+    animateCounter(el, Number(el.dataset.target));
+  });
 }
 
 function drawChart(canvasId, type, labels, data, options = {}) {
@@ -560,6 +570,18 @@ async function loadDashboard(forceRefetch = true) {
     }
   }
 }
+// ============================================================
+// Confetti celebrations
+// ============================================================
+const celebratedCourses = new Set();
+function fireConfetti() {
+  if (typeof confetti === 'undefined') return;
+  confetti({
+    particleCount: 130, spread: 85, origin: { y: 0.6 }, ticks: 200,
+    colors: [cssVar('--accent'), cssVar('--accent-gold'), cssVar('--accent-strong')]
+  });
+}
+
 let lessonsCourseId = null;
 let assignmentsCourseId = null;
 let quizzesCourseId = null;
@@ -621,7 +643,7 @@ async function loadLessons() {
 
   list.querySelectorAll('[data-del-lesson]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('Remove this lesson?')) return;
+      if (!(await confirmDialog('Remove this lesson?'))) return;
       try { await api.lessons.remove(btn.dataset.delLesson); toast('Lesson removed'); loadLessons(); }
       catch (e) { toast(e.message, true); }
     });
@@ -632,6 +654,15 @@ async function loadLessons() {
         await api.progress.markComplete(cb.dataset.completeLesson, cb.checked);
         toast(cb.checked ? 'Marked complete' : 'Marked incomplete');
         loadLessons();
+
+        if (cb.checked) {
+          const updated = await api.progress.forCourse(lessonsCourseId);
+          if (updated.percentage === 100 && !celebratedCourses.has(lessonsCourseId)) {
+            celebratedCourses.add(lessonsCourseId);
+            fireConfetti();
+            toast('🎉 Course complete — great work!');
+          }
+        }
       } catch (e) { toast(e.message, true); }
     });
   });
@@ -688,6 +719,7 @@ async function loadAssignments() {
           <h3 class="item-title">${escapeHtml(a.title)}</h3>
           <div class="item-meta"><span>Due ${fmtDate(a.due_date)}</span><span>Max ${a.max_marks} marks</span></div>
         </div>
+        <span class="countdown-badge" data-due="${a.due_date}"></span>
         ${currentUser.role === 'student' ? assignmentBadge(a, mine) : ''}
         ${isManager() ? `<button class="btn-small danger" data-del-assignment="${a.id}">Remove</button>` : ''}
       </div>
@@ -701,9 +733,11 @@ async function loadAssignments() {
     </div>`;
   }).join('');
 
+  tickCountdowns();
+
   list.querySelectorAll('[data-del-assignment]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('Remove this assignment?')) return;
+      if (!(await confirmDialog('Remove this assignment?'))) return;
       try { await api.assignments.remove(btn.dataset.delAssignment); toast('Assignment removed'); loadAssignments(); }
       catch (e) { toast(e.message, true); }
     });
@@ -827,7 +861,7 @@ async function loadQuizzes() {
 
   list.querySelectorAll('[data-del-quiz]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('Remove this quiz?')) return;
+      if (!(await confirmDialog('Remove this quiz?'))) return;
       try { await api.quizzes.remove(btn.dataset.delQuiz); toast('Quiz removed'); loadQuizzes(); }
       catch (e) { toast(e.message, true); }
     });
@@ -861,11 +895,14 @@ async function loadQuizzes() {
         }).filter(Boolean);
 
         if (answers.length < quiz.questions.length) {
-          if (!confirm('Some questions are unanswered. Submit anyway?')) return;
+          if (!(await confirmDialog('Some questions are unanswered. Submit anyway?', 'Submit incomplete quiz?'))) return;
         }
         try {
           const result = await api.quizAttempts.submit({ quiz_id: Number(quizId), answers });
           toast(`Quiz submitted — score: ${result.score}/${result.total_marks}`);
+          if (result.total_marks > 0 && (result.score / result.total_marks) >= 0.7) {
+            fireConfetti();
+          }
           loadQuizzes();
         } catch (e) { toast(e.message, true); }
       });
@@ -949,6 +986,8 @@ document.getElementById('form-quiz').addEventListener('submit', async (e) => {
 // ============================================================
 async function loadAnnouncements() {
   const announcements = await api.announcements.list();
+  state.announcements = announcements;
+  renderNotifBell(announcements);
   const list = document.getElementById('announcements-list');
   const empty = document.getElementById('announcements-empty');
   empty.hidden = announcements.length > 0;
@@ -971,7 +1010,7 @@ async function loadAnnouncements() {
 
   list.querySelectorAll('[data-del-announcement]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('Remove this announcement?')) return;
+      if (!(await confirmDialog('Remove this announcement?'))) return;
       try { await api.announcements.remove(btn.dataset.delAnnouncement); toast('Announcement removed'); loadAnnouncements(); }
       catch (e) { toast(e.message, true); }
     });
@@ -1059,7 +1098,7 @@ async function loadUsers() {
 
   body.querySelectorAll('[data-reset-user]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const newPassword = prompt('Enter a new password for this user (min 6 characters):');
+      const newPassword = await promptDialog('Enter a new password for this user (min 6 characters)', 'Reset password');
       if (!newPassword) return;
       try {
         await api.users.resetPassword(btn.dataset.resetUser, newPassword);
@@ -1070,7 +1109,7 @@ async function loadUsers() {
 
   body.querySelectorAll('[data-del-user]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('Remove this user permanently?')) return;
+      if (!(await confirmDialog('Remove this user permanently? This cannot be undone.', 'Delete user?'))) return;
       try {
         await api.users.remove(btn.dataset.delUser);
         toast('User removed');
@@ -1107,7 +1146,171 @@ const revealObserver = new IntersectionObserver((entries) => {
 document.querySelectorAll('[data-reveal]').forEach(el => revealObserver.observe(el));
 
 // ============================================================
-// Init
+// Back to top
 // ============================================================
+const backToTopBtn = document.getElementById('back-to-top');
+window.addEventListener('scroll', () => {
+  backToTopBtn.classList.toggle('show', window.scrollY > 400);
+});
+backToTopBtn.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// ============================================================
+// Animated counters (dashboard stat cards)
+// ============================================================
+function animateCounter(el, target) {
+  const duration = 700;
+  const start = performance.now();
+  const from = 0;
+  function tick(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3); // ease-out-cubic
+    el.textContent = Math.round(from + (target - from) * eased);
+    if (progress < 1) requestAnimationFrame(tick);
+    else el.textContent = target;
+  }
+  requestAnimationFrame(tick);
+}
+
+// ============================================================
+// Skeleton loading rows (shown briefly while a table's first fetch is in flight)
+// ============================================================
+function renderSkeletonRows(tbodyId, columns, rowCount = 4) {
+  const body = document.getElementById(tbodyId);
+  if (!body) return;
+  const cell = `<td><div class="skeleton-bar" style="width:${60 + Math.random() * 30}%"></div></td>`;
+  body.innerHTML = Array.from({ length: rowCount }, () =>
+    `<tr class="skeleton-row">${cell.repeat(columns)}</tr>`
+  ).join('');
+}
+
+function showAllSkeletons() {
+  renderSkeletonRows('students-body', 6);
+  renderSkeletonRows('courses-body', 4);
+  renderSkeletonRows('enrollments-body', 5);
+  renderSkeletonRows('attendance-body', 5);
+  renderSkeletonRows('grades-body', 5);
+}
+
+// ============================================================
+// Smooth page transition between tabs
+// ============================================================
+const ledgerPage = document.querySelector('.ledger-page');
+function switchToPanel(tabName) {
+  ledgerPage.classList.add('transitioning');
+  setTimeout(() => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${tabName}`));
+    ledgerPage.classList.remove('transitioning');
+  }, 140);
+}
+// ============================================================
+// Live search / filter (generic — works on any table body)
+// ============================================================
+function attachTableSearch(inputId, tbodyId) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  input.addEventListener('input', () => {
+    const query = input.value.trim().toLowerCase();
+    const rows = document.querySelectorAll(`#${tbodyId} tr`);
+    rows.forEach(row => {
+      if (row.classList.contains('skeleton-row')) return;
+      const matches = row.textContent.toLowerCase().includes(query);
+      row.classList.toggle('search-hidden', query.length > 0 && !matches);
+    });
+  });
+}
+['students', 'courses', 'enrollments', 'attendance', 'grades', 'users'].forEach(name => {
+  attachTableSearch(`${name}-search`, `${name}-body`);
+});
+
+// ============================================================
+// SweetAlert2 helpers (falls back to native dialogs if the CDN failed to load)
+// ============================================================
+async function confirmDialog(message, title = 'Are you sure?') {
+  if (typeof Swal === 'undefined') return confirm(message);
+  const result = await Swal.fire({
+    title, text: message, icon: 'warning',
+    showCancelButton: true, confirmButtonText: 'Yes, proceed', cancelButtonText: 'Cancel',
+    background: cssVar('--surface'), color: cssVar('--ink'),
+    confirmButtonColor: cssVar('--danger'), cancelButtonColor: cssVar('--ink-dim')
+  });
+  return result.isConfirmed;
+}
+
+async function promptDialog(message, title = 'Enter a value') {
+  if (typeof Swal === 'undefined') return prompt(message);
+  const result = await Swal.fire({
+    title, text: message, input: 'text', inputAttributes: { minlength: 6 },
+    showCancelButton: true, confirmButtonText: 'Save', cancelButtonText: 'Cancel',
+    background: cssVar('--surface'), color: cssVar('--ink'),
+    confirmButtonColor: cssVar('--accent'), cancelButtonColor: cssVar('--ink-dim')
+  });
+  return result.isConfirmed ? result.value : null;
+}
+
+// ============================================================
+// Notification bell (reuses Announcements data — no extra backend calls)
+// ============================================================
+const notifBell = document.getElementById('notif-bell');
+const notifDropdown = document.getElementById('notif-dropdown');
+
+notifBell.addEventListener('click', (e) => {
+  e.stopPropagation();
+  notifDropdown.hidden = !notifDropdown.hidden;
+  if (!notifDropdown.hidden) markAnnouncementsSeen();
+});
+document.addEventListener('click', (e) => {
+  if (!notifDropdown.hidden && !e.target.closest('.notif-wrap')) notifDropdown.hidden = true;
+});
+
+function renderNotifBell(announcements) {
+  const lastSeen = Number(localStorage.getItem('sms-last-seen-announcement') || 0);
+  const unread = announcements.filter(a => a.id > lastSeen).length;
+  const badge = document.getElementById('notif-badge');
+  badge.hidden = unread === 0;
+  badge.textContent = unread > 9 ? '9+' : unread;
+
+  const list = document.getElementById('notif-list');
+  list.innerHTML = announcements.slice(0, 8).map(a => `
+    <div class="notif-item">
+      <p class="notif-item-title">${escapeHtml(a.title)}</p>
+      <p class="notif-item-meta">${a.course_name ? escapeHtml(a.course_name) : 'Site-wide'} · ${fmtDate(a.created_at)}</p>
+    </div>`).join('') || `<div class="notif-item"><p class="notif-item-meta">No announcements yet.</p></div>`;
+}
+
+function markAnnouncementsSeen() {
+  if (!state.announcements || !state.announcements.length) return;
+  const maxId = Math.max(...state.announcements.map(a => a.id));
+  localStorage.setItem('sms-last-seen-announcement', maxId);
+  document.getElementById('notif-badge').hidden = true;
+}
+
+// ============================================================
+// Assignment countdown timer (updates every 30s, live)
+// ============================================================
+function formatCountdown(dueDateStr) {
+  const diffMs = new Date(dueDateStr) - new Date();
+  if (diffMs <= 0) return { text: 'Overdue', cls: 'countdown-over' };
+
+  const mins = Math.floor(diffMs / 60000);
+  const hours = Math.floor(mins / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days >= 1) return { text: `${days}d ${hours % 24}h left`, cls: days <= 1 ? 'countdown-soon' : 'countdown-ok' };
+  if (hours >= 1) return { text: `${hours}h ${mins % 60}m left`, cls: 'countdown-soon' };
+  return { text: `${mins}m left`, cls: 'countdown-soon' };
+}
+
+function tickCountdowns() {
+  document.querySelectorAll('[data-due]').forEach(el => {
+    const { text, cls } = formatCountdown(el.dataset.due);
+    el.textContent = text;
+    el.className = `countdown-badge ${cls}`;
+  });
+}
+setInterval(tickCountdowns, 30000);
+
 tryAutoLogin();
 setInterval(() => { if (currentUser) checkHealth(); }, 15000);
