@@ -31,6 +31,31 @@ class AttendanceRepository extends IRepository {
         return rows;
     }
 
+    /** Attendance across every course this instructor teaches. */
+    async findByInstructorId(instructorId) {
+        const [rows] = await pool.query(`
+            SELECT a.*, s.name AS student_name, c.name AS course_name
+            FROM attendance a
+            JOIN students s ON s.id = a.student_id
+            JOIN courses c ON c.id = a.course_id
+            WHERE c.instructor_id = ?
+            ORDER BY a.date DESC
+        `, [instructorId]);
+        return rows;
+    }
+
+    /** One student's attendance, but only within courses this instructor teaches. */
+    async findByStudentIdForInstructor(studentId, instructorId) {
+        const [rows] = await pool.query(`
+            SELECT a.*, c.name AS course_name
+            FROM attendance a
+            JOIN courses c ON c.id = a.course_id
+            WHERE a.student_id = ? AND c.instructor_id = ?
+            ORDER BY a.date DESC
+        `, [studentId, instructorId]);
+        return rows;
+    }
+
     async create(attendanceEntity) {
         const { student_id, course_id, date, status } = attendanceEntity;
         const [result] = await pool.query(

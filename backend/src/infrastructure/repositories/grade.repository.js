@@ -30,6 +30,30 @@ class GradeRepository extends IRepository {
         return rows;
     }
 
+    /** Grades across every course this instructor teaches. */
+    async findByInstructorId(instructorId) {
+        const [rows] = await pool.query(`
+            SELECT g.*, s.name AS student_name, c.name AS course_name
+            FROM grades g
+            JOIN students s ON s.id = g.student_id
+            JOIN courses c ON c.id = g.course_id
+            WHERE c.instructor_id = ?
+            ORDER BY g.id DESC
+        `, [instructorId]);
+        return rows;
+    }
+
+    /** One student's grades, but only within courses this instructor teaches. */
+    async findByStudentIdForInstructor(studentId, instructorId) {
+        const [rows] = await pool.query(`
+            SELECT g.*, c.name AS course_name
+            FROM grades g
+            JOIN courses c ON c.id = g.course_id
+            WHERE g.student_id = ? AND c.instructor_id = ?
+        `, [studentId, instructorId]);
+        return rows;
+    }
+
     async findByStudentAndCourse(studentId, courseId) {
         const [rows] = await pool.query(
             'SELECT * FROM grades WHERE student_id = ? AND course_id = ?',

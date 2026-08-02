@@ -19,6 +19,12 @@ class CourseRepository extends IRepository {
         return rows.map(row => new Course(row));
     }
 
+    async findByIds(ids) {
+        if (!ids.length) return [];
+        const [rows] = await pool.query('SELECT * FROM courses WHERE id IN (?) ORDER BY id DESC', [ids]);
+        return rows.map(row => new Course(row));
+    }
+
     async create(courseEntity) {
         const { name, code, credit_hours, instructor_id } = courseEntity;
         const [result] = await pool.query(

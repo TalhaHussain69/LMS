@@ -22,11 +22,24 @@ class EnrollmentRepository extends IRepository {
 
     async findByStudentId(studentId) {
         const [rows] = await pool.query(`
-            SELECT e.*, c.name AS course_name, c.code AS course_code, c.credit_hours
+            SELECT e.*, c.name AS course_name, c.code AS course_code, c.credit_hours, c.instructor_id
             FROM enrollments e
             JOIN courses c ON c.id = e.course_id
             WHERE e.student_id = ?
         `, [studentId]);
+        return rows;
+    }
+
+    /** Enrollments across every course this instructor teaches. */
+    async findByInstructorId(instructorId) {
+        const [rows] = await pool.query(`
+            SELECT e.*, s.name AS student_name, c.name AS course_name, c.code AS course_code
+            FROM enrollments e
+            JOIN students s ON s.id = e.student_id
+            JOIN courses c ON c.id = e.course_id
+            WHERE c.instructor_id = ?
+            ORDER BY e.id DESC
+        `, [instructorId]);
         return rows;
     }
 

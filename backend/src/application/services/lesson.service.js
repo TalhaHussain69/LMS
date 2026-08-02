@@ -1,5 +1,6 @@
 const lessonRepository = require('../../infrastructure/repositories/lesson.repository');
 const courseRepository = require('../../infrastructure/repositories/course.repository');
+const { assertCourseAccess, assertCanManageCourse } = require('./access.util');
 
 class LessonService {
     constructor(repository, courseRepo) {
@@ -7,7 +8,8 @@ class LessonService {
         this.courseRepository = courseRepo;
     }
 
-    async getCourseLessons(courseId) {
+    async getCourseLessons(courseId, user) {
+        await assertCourseAccess(courseId, user);
         return this.repository.findByCourseId(courseId);
     }
 
@@ -17,19 +19,22 @@ class LessonService {
         return lesson;
     }
 
-    async createLesson(data) {
+    async createLesson(data, user) {
         const course = await this.courseRepository.findById(data.course_id);
         if (!course) throw new Error('Course not found');
+        if (user.role === 'teacher') await assertCanManageCourse(data.course_id, user);
         return this.repository.create(data);
     }
 
-    async updateLesson(id, data) {
-        await this.getLessonById(id);
+    async updateLesson(id, data, user) {
+        const lesson = await this.getLessonById(id);
+        if (user.role === 'teacher') await assertCanManageCourse(lesson.course_id, user);
         return this.repository.update(id, data);
     }
 
-    async deleteLesson(id) {
-        await this.getLessonById(id);
+    async deleteLesson(id, user) {
+        const lesson = await this.getLessonById(id);
+        if (user.role === 'teacher') await assertCanManageCourse(lesson.course_id, user);
         return this.repository.delete(id);
     }
 }

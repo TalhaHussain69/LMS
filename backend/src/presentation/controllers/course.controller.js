@@ -3,7 +3,7 @@ const asyncHandler = require('../middlewares/asyncHandler');
 
 class CourseController {
     getAll = asyncHandler(async (req, res) => {
-        const courses = await courseService.getAllCourses();
+        const courses = await courseService.getAllCourses(req.user);
         res.json({ success: true, data: courses });
     });
 
@@ -13,17 +13,17 @@ class CourseController {
     });
 
     create = asyncHandler(async (req, res) => {
-        const course = await courseService.createCourse(req.body);
+        const course = await courseService.createCourse(req.body, req.user);
         res.status(201).json({ success: true, data: course });
     });
 
     update = asyncHandler(async (req, res) => {
-        const course = await courseService.updateCourse(req.params.id, req.body);
+        const course = await courseService.updateCourse(req.params.id, req.body, req.user);
         res.json({ success: true, data: course });
     });
 
     remove = asyncHandler(async (req, res) => {
-        await courseService.deleteCourse(req.params.id);
+        await courseService.deleteCourse(req.params.id, req.user);
         res.json({ success: true, message: 'Course deleted successfully' });
     });
 }

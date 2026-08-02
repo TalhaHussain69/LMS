@@ -5,7 +5,7 @@ const Announcement = require('../../domain/entities/Announcement');
 class AnnouncementRepository extends IRepository {
     async findAll() {
         const [rows] = await pool.query(`
-            SELECT a.*, u.name AS posted_by_name, c.name AS course_name
+            SELECT a.*, u.name AS posted_by_name, c.name AS course_name, c.instructor_id
             FROM announcements a
             JOIN users u ON u.id = a.posted_by
             LEFT JOIN courses c ON c.id = a.course_id

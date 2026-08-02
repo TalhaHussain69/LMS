@@ -1,5 +1,6 @@
 const assignmentRepository = require('../../infrastructure/repositories/assignment.repository');
 const courseRepository = require('../../infrastructure/repositories/course.repository');
+const { assertCourseAccess, assertCanManageCourse } = require('./access.util');
 
 class AssignmentService {
     constructor(repository, courseRepo) {
@@ -7,11 +8,13 @@ class AssignmentService {
         this.courseRepository = courseRepo;
     }
 
+    // Admin-only route (see assignment.routes.js) — full cross-course list.
     async getAllAssignments() {
         return this.repository.findAll();
     }
 
-    async getCourseAssignments(courseId) {
+    async getCourseAssignments(courseId, user) {
+        await assertCourseAccess(courseId, user);
         return this.repository.findByCourseId(courseId);
     }
 
@@ -21,19 +24,22 @@ class AssignmentService {
         return assignment;
     }
 
-    async createAssignment(data, instructorId) {
+    async createAssignment(data, user) {
         const course = await this.courseRepository.findById(data.course_id);
         if (!course) throw new Error('Course not found');
-        return this.repository.create({ ...data, created_by: instructorId });
+        if (user.role === 'teacher') await assertCanManageCourse(data.course_id, user);
+        return this.repository.create({ ...data, created_by: user.id });
     }
 
-    async updateAssignment(id, data) {
-        await this.getAssignmentById(id);
+    async updateAssignment(id, data, user) {
+        const assignment = await this.getAssignmentById(id);
+        if (user.role === 'teacher') await assertCanManageCourse(assignment.course_id, user);
         return this.repository.update(id, data);
     }
 
-    async deleteAssignment(id) {
-        await this.getAssignmentById(id);
+    async deleteAssignment(id, user) {
+        const assignment = await this.getAssignmentById(id);
+        if (user.role === 'teacher') await assertCanManageCourse(assignment.course_id, user);
         return this.repository.delete(id);
     }
 }

@@ -8,22 +8,22 @@ class AssignmentController {
     });
 
     getByCourse = asyncHandler(async (req, res) => {
-        const assignments = await assignmentService.getCourseAssignments(req.params.courseId);
+        const assignments = await assignmentService.getCourseAssignments(req.params.courseId, req.user);
         res.json({ success: true, data: assignments });
     });
 
     create = asyncHandler(async (req, res) => {
-        const assignment = await assignmentService.createAssignment(req.body, req.user.id);
+        const assignment = await assignmentService.createAssignment(req.body, req.user);
         res.status(201).json({ success: true, data: assignment });
     });
 
     update = asyncHandler(async (req, res) => {
-        const assignment = await assignmentService.updateAssignment(req.params.id, req.body);
+        const assignment = await assignmentService.updateAssignment(req.params.id, req.body, req.user);
         res.json({ success: true, data: assignment });
     });
 
     remove = asyncHandler(async (req, res) => {
-        await assignmentService.deleteAssignment(req.params.id);
+        await assignmentService.deleteAssignment(req.params.id, req.user);
         res.json({ success: true, message: 'Assignment deleted successfully' });
     });
 }

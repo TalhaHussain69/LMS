@@ -3,17 +3,17 @@ const asyncHandler = require('../middlewares/asyncHandler');
 
 class AttendanceController {
     getAll = asyncHandler(async (req, res) => {
-        const records = await attendanceService.getAllAttendance();
+        const records = await attendanceService.getAllAttendance(req.user);
         res.json({ success: true, data: records });
     });
 
     getByStudent = asyncHandler(async (req, res) => {
-        const records = await attendanceService.getStudentAttendance(req.params.studentId);
+        const records = await attendanceService.getStudentAttendance(req.params.studentId, req.user);
         res.json({ success: true, data: records });
     });
 
     create = asyncHandler(async (req, res) => {
-        const record = await attendanceService.markAttendance(req.body);
+        const record = await attendanceService.markAttendance(req.body, req.user);
         res.status(201).json({ success: true, data: record });
     });
 

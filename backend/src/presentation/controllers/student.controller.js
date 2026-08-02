@@ -3,12 +3,17 @@ const asyncHandler = require('../middlewares/asyncHandler');
 
 class StudentController {
     getAll = asyncHandler(async (req, res) => {
-        const students = await studentService.getAllStudents();
+        const students = await studentService.getAllStudents(req.user);
         res.json({ success: true, data: students });
     });
 
+    getMe = asyncHandler(async (req, res) => {
+        const student = await studentService.getMyProfile(req.user);
+        res.json({ success: true, data: student });
+    });
+
     getById = asyncHandler(async (req, res) => {
-        const student = await studentService.getStudentById(req.params.id);
+        const student = await studentService.getStudentById(req.params.id, req.user);
         res.json({ success: true, data: student });
     });
 

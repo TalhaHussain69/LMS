@@ -3,7 +3,7 @@ const asyncHandler = require('../middlewares/asyncHandler');
 
 class QuizAttemptController {
     getByQuiz = asyncHandler(async (req, res) => {
-        const attempts = await attemptService.getQuizAttempts(req.params.quizId);
+        const attempts = await attemptService.getQuizAttempts(req.params.quizId, req.user);
         res.json({ success: true, data: attempts });
     });
 

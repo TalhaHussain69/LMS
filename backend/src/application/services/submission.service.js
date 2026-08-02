@@ -1,6 +1,7 @@
 const submissionRepository = require('../../infrastructure/repositories/submission.repository');
 const assignmentRepository = require('../../infrastructure/repositories/assignment.repository');
 const enrollmentRepository = require('../../infrastructure/repositories/enrollment.repository');
+const { assertCanManageCourse } = require('./access.util');
 
 class SubmissionService {
     constructor(repository, assignmentRepo, enrollmentRepo) {
@@ -9,7 +10,10 @@ class SubmissionService {
         this.enrollmentRepository = enrollmentRepo;
     }
 
-    async getAssignmentSubmissions(assignmentId) {
+    async getAssignmentSubmissions(assignmentId, user) {
+        const assignment = await this.assignmentRepository.findById(assignmentId);
+        if (!assignment) throw new Error('Assignment not found');
+        if (user.role === 'teacher') await assertCanManageCourse(assignment.course_id, user);
         return this.repository.findByAssignmentId(assignmentId);
     }
 
@@ -30,11 +34,12 @@ class SubmissionService {
         return this.repository.create({ assignment_id: assignmentId, student_id: studentId, content });
     }
 
-    async gradeSubmission(id, marksObtained, feedback) {
+    async gradeSubmission(id, marksObtained, feedback, user) {
         const submission = await this.repository.findById(id);
         if (!submission) throw new Error('Submission not found');
 
         const assignment = await this.assignmentRepository.findById(submission.assignment_id);
+        if (user.role === 'teacher') await assertCanManageCourse(assignment.course_id, user);
         if (marksObtained < 0 || marksObtained > assignment.max_marks) {
             throw new Error(`Marks must be between 0 and ${assignment.max_marks}`);
         }

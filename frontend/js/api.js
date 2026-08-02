@@ -33,6 +33,7 @@ const api = {
 
   students: {
     list: () => apiRequest('/students'),
+    me: () => apiRequest('/students/me'),
     create: (data) => apiRequest('/students', { method: 'POST', body: JSON.stringify(data) }),
     update: (id, data) => apiRequest(`/students/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     remove: (id) => apiRequest(`/students/${id}`, { method: 'DELETE' })
@@ -45,16 +46,19 @@ const api = {
   },
   enrollments: {
     list: () => apiRequest('/enrollments'),
+    byStudent: (studentId) => apiRequest(`/enrollments/student/${studentId}`),
     create: (data) => apiRequest('/enrollments', { method: 'POST', body: JSON.stringify(data) }),
     remove: (id) => apiRequest(`/enrollments/${id}`, { method: 'DELETE' })
   },
   attendance: {
     list: () => apiRequest('/attendance'),
+    byStudent: (studentId) => apiRequest(`/attendance/student/${studentId}`),
     create: (data) => apiRequest('/attendance', { method: 'POST', body: JSON.stringify(data) }),
     remove: (id) => apiRequest(`/attendance/${id}`, { method: 'DELETE' })
   },
   grades: {
     list: () => apiRequest('/grades'),
+    byStudent: (studentId) => apiRequest(`/grades/student/${studentId}`),
     create: (data) => apiRequest('/grades', { method: 'POST', body: JSON.stringify(data) }),
     remove: (id) => apiRequest(`/grades/${id}`, { method: 'DELETE' })
   },

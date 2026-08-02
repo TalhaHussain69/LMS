@@ -2,6 +2,7 @@ const attemptRepository = require('../../infrastructure/repositories/quizAttempt
 const questionRepository = require('../../infrastructure/repositories/quizQuestion.repository');
 const quizRepository = require('../../infrastructure/repositories/quiz.repository');
 const enrollmentRepository = require('../../infrastructure/repositories/enrollment.repository');
+const { assertCanManageCourse } = require('./access.util');
 
 class QuizAttemptService {
     constructor(attemptRepo, questionRepo, quizRepo, enrollmentRepo) {
@@ -11,7 +12,10 @@ class QuizAttemptService {
         this.enrollmentRepository = enrollmentRepo;
     }
 
-    async getQuizAttempts(quizId) {
+    async getQuizAttempts(quizId, user) {
+        const quiz = await this.quizRepository.findById(quizId);
+        if (!quiz) throw new Error('Quiz not found');
+        if (user.role === 'teacher') await assertCanManageCourse(quiz.course_id, user);
         return this.repository.findByQuizId(quizId);
     }
 

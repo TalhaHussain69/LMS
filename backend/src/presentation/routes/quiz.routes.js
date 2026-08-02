@@ -3,7 +3,7 @@ const router = express.Router();
 const quizController = require('../controllers/quiz.controller');
 const { requireAuth, requireRole } = require('../middlewares/auth.middleware');
 
-router.get('/', requireAuth, quizController.getAll);
+router.get('/', requireAuth, requireRole('admin'), quizController.getAll);
 router.get('/course/:courseId', requireAuth, quizController.getByCourse);
 router.get('/:id/attempt', requireAuth, quizController.getForAttempt);
 router.get('/:id/full', requireAuth, requireRole('admin', 'teacher'), quizController.getWithAnswers);

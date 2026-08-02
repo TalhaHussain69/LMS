@@ -41,15 +41,15 @@
       </div>
 
       <form id="form-login" class="auth-form">
-        <div class="field"><label>Email</label><input required type="email" name="email" placeholder="you@example.com"></div>
-        <div class="field"><label>Password</label><input required type="password" name="password" placeholder="********"></div>
+        <div class="field"><label>Email</label><input required type="email" name="email" placeholder="you@example.com" autocomplete="off"></div>
+        <div class="field"><label>Password</label><input required type="password" name="password" placeholder="********" autocomplete="off"></div>
         <button type="submit" class="btn-stamp auth-submit">Enter Register</button>
       </form>
 
       <form id="form-register" class="auth-form" hidden>
         <div class="field"><label>Full name</label><input required name="name" placeholder="Your name"></div>
-        <div class="field"><label>Email</label><input required type="email" name="email" placeholder="you@example.com"></div>
-        <div class="field"><label>Password</label><input required type="password" name="password" placeholder="At least 6 characters" minlength="6"></div>
+        <div class="field"><label>Email</label><input required type="email" name="email" placeholder="you@example.com" autocomplete="off"></div>
+        <div class="field"><label>Password</label><input required type="password" name="password" placeholder="At least 6 characters" minlength="6" autocomplete="off"></div>
         <div class="field">
           <label>Role</label>
           <select name="role">
@@ -66,7 +66,7 @@
   </div>
 
   <!-- ===================== NOTIFICATION BELL ===================== -->
-  <div class="notif-wrap" id="notif-wrap">
+  <div class="notif-wrap" id="notif-wrap" hidden>
     <button class="notif-bell" id="notif-bell" title="Announcements">
       🔔
       <span class="notif-badge" id="notif-badge" hidden>0</span>
@@ -197,7 +197,7 @@
       <form class="record-form" id="form-student" hidden>
         <input type="hidden" name="id">
         <div class="field"><label>Full name</label><input required name="name" placeholder="e.g. Ayesha Khan"></div>
-        <div class="field"><label>Email</label><input required type="email" name="email" placeholder="ayesha@example.com"></div>
+        <div class="field"><label>Email</label><input required type="email" name="email" placeholder="ayesha@example.com" autocomplete="off"></div>
         <div class="field"><label>Phone</label><input name="phone" placeholder="03xx-xxxxxxx"></div>
         <div class="form-actions">
           <button type="submit" class="btn-stamp">Save Record</button>
@@ -517,8 +517,8 @@
 
       <form class="record-form" id="form-user" hidden>
         <div class="field"><label>Full name</label><input required name="name" placeholder="Full name"></div>
-        <div class="field"><label>Email</label><input required type="email" name="email" placeholder="email@example.com"></div>
-        <div class="field"><label>Password</label><input required type="password" name="password" placeholder="At least 6 characters" minlength="6"></div>
+        <div class="field"><label>Email</label><input required type="email" name="email" placeholder="email@example.com" autocomplete="off"></div>
+        <div class="field"><label>Password</label><input required type="password" name="password" placeholder="At least 6 characters" minlength="6" autocomplete="off"></div>
         <div class="field">
           <label>Role</label>
           <select name="role">

@@ -1,25 +1,33 @@
 const attendanceRepository = require('../../infrastructure/repositories/attendance.repository');
 const enrollmentRepository = require('../../infrastructure/repositories/enrollment.repository');
+const courseRepository = require('../../infrastructure/repositories/course.repository');
+const { forbidden, assertCanViewStudent, assertCanManageCourse } = require('./access.util');
 
 class AttendanceService {
-    constructor(attendanceRepo, enrollmentRepo) {
+    constructor(attendanceRepo, enrollmentRepo, courseRepo) {
         this.repository = attendanceRepo;
         this.enrollmentRepository = enrollmentRepo;
+        this.courseRepository = courseRepo;
     }
 
-    async getAllAttendance() {
-        return this.repository.findAll();
+    async getAllAttendance(user) {
+        if (user.role === 'admin') return this.repository.findAll();
+        if (user.role === 'teacher') return this.repository.findByInstructorId(user.id);
+        throw forbidden('Not allowed to list all attendance records');
     }
 
-    async getStudentAttendance(studentId) {
+    async getStudentAttendance(studentId, user) {
+        await assertCanViewStudent(studentId, user);
+        if (user.role === 'teacher') return this.repository.findByStudentIdForInstructor(studentId, user.id);
         return this.repository.findByStudentId(studentId);
     }
 
-    async markAttendance(data) {
+    async markAttendance(data, user) {
         const isEnrolled = await this.enrollmentRepository.exists(data.student_id, data.course_id);
         if (!isEnrolled) {
             throw new Error('Cannot mark attendance — student is not enrolled in this course');
         }
+        if (user.role === 'teacher') await assertCanManageCourse(data.course_id, user);
         return this.repository.create(data);
     }
 
@@ -36,4 +44,4 @@ class AttendanceService {
     }
 }
 
-module.exports = new AttendanceService(attendanceRepository, enrollmentRepository);
+module.exports = new AttendanceService(attendanceRepository, enrollmentRepository, courseRepository);

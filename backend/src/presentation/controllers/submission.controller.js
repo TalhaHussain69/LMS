@@ -3,7 +3,7 @@ const asyncHandler = require('../middlewares/asyncHandler');
 
 class SubmissionController {
     getByAssignment = asyncHandler(async (req, res) => {
-        const submissions = await submissionService.getAssignmentSubmissions(req.params.assignmentId);
+        const submissions = await submissionService.getAssignmentSubmissions(req.params.assignmentId, req.user);
         res.json({ success: true, data: submissions });
     });
 
@@ -20,7 +20,7 @@ class SubmissionController {
 
     grade = asyncHandler(async (req, res) => {
         const { marks_obtained, feedback } = req.body;
-        const submission = await submissionService.gradeSubmission(req.params.id, marks_obtained, feedback);
+        const submission = await submissionService.gradeSubmission(req.params.id, marks_obtained, feedback, req.user);
         res.json({ success: true, data: submission });
     });
 }

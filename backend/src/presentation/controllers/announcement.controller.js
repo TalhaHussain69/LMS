@@ -3,7 +3,7 @@ const asyncHandler = require('../middlewares/asyncHandler');
 
 class AnnouncementController {
     getAll = asyncHandler(async (req, res) => {
-        const announcements = await announcementService.getAllAnnouncements();
+        const announcements = await announcementService.getAllAnnouncements(req.user);
         res.json({ success: true, data: announcements });
     });
 
@@ -13,7 +13,7 @@ class AnnouncementController {
     });
 
     create = asyncHandler(async (req, res) => {
-        const announcement = await announcementService.createAnnouncement(req.body, req.user.id);
+        const announcement = await announcementService.createAnnouncement(req.body, req.user);
         res.status(201).json({ success: true, data: announcement });
     });
 

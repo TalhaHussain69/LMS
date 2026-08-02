@@ -8,34 +8,34 @@ class QuizController {
     });
 
     getByCourse = asyncHandler(async (req, res) => {
-        const quizzes = await quizService.getCourseQuizzes(req.params.courseId);
+        const quizzes = await quizService.getCourseQuizzes(req.params.courseId, req.user);
         res.json({ success: true, data: quizzes });
     });
 
     // Instructor/Admin view — includes correct answers
     getWithAnswers = asyncHandler(async (req, res) => {
-        const quiz = await quizService.getQuizWithAnswers(req.params.id);
+        const quiz = await quizService.getQuizWithAnswers(req.params.id, req.user);
         res.json({ success: true, data: quiz });
     });
 
     // Student view — about to attempt, no correct answers included
     getForAttempt = asyncHandler(async (req, res) => {
-        const quiz = await quizService.getQuizForAttempt(req.params.id);
+        const quiz = await quizService.getQuizForAttempt(req.params.id, req.user);
         res.json({ success: true, data: quiz });
     });
 
     create = asyncHandler(async (req, res) => {
-        const quiz = await quizService.createQuiz(req.body, req.user.id);
+        const quiz = await quizService.createQuiz(req.body, req.user);
         res.status(201).json({ success: true, data: quiz });
     });
 
     addQuestion = asyncHandler(async (req, res) => {
-        const question = await quizService.addQuestion(req.params.id, req.body);
+        const question = await quizService.addQuestion(req.params.id, req.body, req.user);
         res.status(201).json({ success: true, data: question });
     });
 
     remove = asyncHandler(async (req, res) => {
-        await quizService.deleteQuiz(req.params.id);
+        await quizService.deleteQuiz(req.params.id, req.user);
         res.json({ success: true, message: 'Quiz deleted successfully' });
     });
 }

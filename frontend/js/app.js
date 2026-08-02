@@ -2,7 +2,7 @@
 // THE REGISTER — app.js
 // ============================================================
 
-let state = { students: [], courses: [], enrollments: [], attendance: [], grades: [] };
+let state = { students: [], courses: [], enrollments: [], attendance: [], grades: [], myStudentId: null };
 let currentUser = null;
 
 // ---------------- Theme ----------------
@@ -71,6 +71,13 @@ function applyRoleVisibility() {
   document.querySelectorAll('[data-admin-only]').forEach(el => {
     el.classList.toggle('role-hidden', !isAdmin);
   });
+
+  const isStudent = currentUser && currentUser.role === 'student';
+  const studentsTab = document.querySelector('.tab[data-tab="students"]');
+  if (studentsTab) studentsTab.classList.toggle('role-hidden', isStudent);
+  if (isStudent && studentsTab && studentsTab.classList.contains('active')) {
+    switchToPanel('dashboard');
+  }
 }
 
 function enterApp(user) {
@@ -79,6 +86,7 @@ function enterApp(user) {
   document.getElementById('user-role').textContent = user.role;
   authGate.hidden = true;
   appShell.hidden = false;
+  document.getElementById('notif-wrap').hidden = false;
   applyRoleVisibility();
   showAllSkeletons();
   checkHealth();
@@ -88,8 +96,10 @@ function enterApp(user) {
 function logout() {
   localStorage.removeItem('sms-token');
   currentUser = null;
+  state.myStudentId = null;
   appShell.hidden = true;
   authGate.hidden = false;
+  document.getElementById('notif-wrap').hidden = true;
   document.getElementById('form-login').reset();
 }
 
@@ -309,14 +319,16 @@ document.getElementById('form-course').addEventListener('submit', async (e) => {
 // ENROLLMENTS
 // ============================================================
 async function loadEnrollments() {
-  state.enrollments = await api.enrollments.list();
+  state.enrollments = currentUser.role === 'student'
+    ? (state.myStudentId ? await api.enrollments.byStudent(state.myStudentId) : [])
+    : await api.enrollments.list();
   const body = document.getElementById('enrollments-body');
   const empty = document.getElementById('enrollments-empty');
   empty.hidden = state.enrollments.length > 0;
 
   body.innerHTML = state.enrollments.map((e, i) => `
     <tr style="animation-delay:${i * 40}ms">
-      <td>${e.student_name}</td>
+      <td>${e.student_name || currentUser.name}</td>
       <td>${e.course_name}</td>
       <td>${e.course_code}</td>
       <td>${fmtDate(e.enrolled_at)}</td>
@@ -351,14 +363,16 @@ document.getElementById('form-enrollment').addEventListener('submit', async (e) 
 // ATTENDANCE
 // ============================================================
 async function loadAttendance() {
-  state.attendance = await api.attendance.list();
+  state.attendance = currentUser.role === 'student'
+    ? (state.myStudentId ? await api.attendance.byStudent(state.myStudentId) : [])
+    : await api.attendance.list();
   const body = document.getElementById('attendance-body');
   const empty = document.getElementById('attendance-empty');
   empty.hidden = state.attendance.length > 0;
 
   body.innerHTML = state.attendance.map((a, i) => `
     <tr style="animation-delay:${i * 40}ms">
-      <td>${a.student_name}</td>
+      <td>${a.student_name || currentUser.name}</td>
       <td>${a.course_name}</td>
       <td>${fmtDate(a.date)}</td>
       <td><span class="status-pill status-${a.status}">${a.status}</span></td>
@@ -402,14 +416,16 @@ function gradeClass(letter) {
 }
 
 async function loadGrades() {
-  state.grades = await api.grades.list();
+  state.grades = currentUser.role === 'student'
+    ? (state.myStudentId ? await api.grades.byStudent(state.myStudentId) : [])
+    : await api.grades.list();
   const body = document.getElementById('grades-body');
   const empty = document.getElementById('grades-empty');
   empty.hidden = state.grades.length > 0;
 
   body.innerHTML = state.grades.map((g, i) => `
     <tr style="animation-delay:${i * 40}ms">
-      <td>${g.student_name}</td>
+      <td>${g.student_name || currentUser.name}</td>
       <td>${g.course_name}</td>
       <td>${g.marks}</td>
       <td><span class="stamp ${gradeClass(g.grade)}">${g.grade}</span></td>
@@ -1038,7 +1054,18 @@ document.getElementById('form-announcement').addEventListener('submit', async (e
 // ============================================================
 async function refreshAll() {
   try {
-    await loadStudents();
+    if (currentUser.role === 'student') {
+      if (!state.myStudentId) {
+        try {
+          const profile = await api.students.me();
+          state.myStudentId = profile.id;
+        } catch {
+          state.myStudentId = null; // no linked student record yet — scoped views will show empty
+        }
+      }
+    } else {
+      await loadStudents();
+    }
     await loadCourses();
     await Promise.all([loadEnrollments(), loadAttendance(), loadGrades(), loadAnnouncements(), loadDashboard()]);
     if (lessonsCourseId) await loadLessons();
